@@ -5,9 +5,46 @@ var express = require('express'),
 	app = express(),
 	bodyParser = require('body-parser'),
 	router = express.Router(),
-	redis = require('redis'),
-	client = redis.createClient(),
+	mongoClient = require('mongodb').MongoClient,
+    db,
     seed = 49999;
+
+// connect to db
+mongoClient.connect("mongodb://localhost:27017/urlshortener", function (err, mdb) {
+    if (!err) {
+        console.log("Connected to db");
+        db = mdb;
+
+        // create next key in db if it does not exist
+        db.collection('next').findAndModify(
+        { next: 'next' },
+        [[ 'next', 1 ]],
+        { $setOnInsert: { value: seed } },
+        { upsert: true },
+        function (err, result) {
+            if (err !== null) {
+                console.log(err);
+            }
+        });
+
+        // create capped collection if it does not exist
+        db.collection('top10').isCapped( function (err, capped) {
+            if (!capped) {
+                db.createCollection( 'top10', { capped: true, size: 4096 }, function (err, result) {
+                    if (result !== null) {
+                        Console.log("top10 collection created");
+                    }
+                    else {
+                        console.log("top10 collected NOT created." +err);
+                    }
+                });
+            }
+        });
+    }
+    else {
+        console.log(err);
+    }
+});
 
 app.use(express.static(__dirname + "/client"));
 
@@ -31,40 +68,38 @@ function encode(num) {
 }
 
 function nextKey(callback) {
-    client.setnx('next', seed, function (err, reply) {
-        if (err !== null) {
-            console.log(err);
+    var incrValue = Math.round(Math.random() * 10);
+    var collection = db.collection('next');
+    // increment next value
+    collection.update(
+        { next: 'next' }, 
+        { $inc: {value: incrValue} }, 
+        function (err, result) {
+            if (result !== null) {
+            collection.findOne( { next: 'next'}, function (err, result) {
+                    console.log(result);
+                    callback(result.value);
+                });
         }
-        client.incrby('next', Math.round(Math.random() * 10), function (err, reply) { // Random so the next key will be harder to guess.
-            if (err !== null) {
-            console.log(err);
-            }
-            if (reply !== null) {
-                callback(reply);
-            }
-        }); 
-    });
+    } );
 }
 
 router.route('/:key')
 .get( function (req, res) {
-    client.get(req.params.key, function (err, reply) {
-        if (err !== null) {
-            console.log(err);
-        }
-
-        if (reply !== null) {
-        res.redirect(reply);
-
-        client.zincrby('hits', 1, req.params.key, function (err, reply) {
-            if (err !== null) {
-            console.log(err);
-            }
-        });
+    db.collection('url').findOne( { key: req.params.key }, function (err, result) {
+        if (result !== null) {
+            res.redirect(result.url);
+            // increment hits
+            db.collection('top10').update( { key: req.params.key }, { $inc: { hits: 1 } }, { upsert: true }, function (err, result) {
+                if (err !== null) {
+                    console.log("increment hits error: " +err);
+                }
+            });
         }
         else {
             res.status(404).send('404 not found');
         }
+
     });
 });
 
@@ -72,39 +107,35 @@ router.route('/shorten')
 .post( function (req, res) {
     nextKey( function (num) {
         var key = encode(num);
-        client.set(key, req.body.key);
-        res.json({key: key});
+        db.collection('url').save( { key: key, url: req.body.url }, function (err, result) {
+            if (err !== null) {
+                console.log(err);
+            }
+        });
+        res.json( { key: key } );
     });
 });
 
 router.route('/url/:key')
 .get( function (req, res) {
-    client.get(req.params.key, function (err, reply) {
-        if (err !== null) {
-            console.log(err);
-        }
-        
-        if (reply !== null) {
-            res.json({url: reply});
-        }
-        else {
-            res.status(404).send('404 not found');
-        }
+    db.collection('url').findOne( { key: req.params.key }, function (err, result) {
+    if (result !== null) {
+        res.json( { url: result.url } );
     }
-    );
+    else {
+        res.status(404).send('404 not found');
+    }
+    });
 });
 
 router.route('/top/get')
-.get( function (req, res) {
-    client.zrevrange('hits', 0, 9, 'withscores', function (err, reply) {
-        if (err !== null) {
-            console.log(err);
-        }
-        
-        if (reply !== null) {
-            res.json({top10: reply});
+.get( function (req, res) { 
+    db.collection('top10').find( {}, { sort: [['hits', 'desc']], limit: 10 } ).toArray( function (err, result) {
+        if (result !== null) {
+            res.json( {top10: result} );
         }
         else {
+            console.log(err);
             res.status(404).send('404 not found');
         }
     });

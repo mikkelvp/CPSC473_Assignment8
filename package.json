@@ -1,0 +1,25 @@
+{
+  "name": "CPSC473_Assignment8",
+  "version": "0.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "body-parser": "^1.12.2",
+    "express": "^4.12.3",
+    "mongodb": "*"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikkelvp/CPSC473_Assignment8.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mikkelvp/CPSC473_Assignment8/issues"
+  },
+  "homepage": "https://github.com/mikkelvp/CPSC473_Assignment8"
+}

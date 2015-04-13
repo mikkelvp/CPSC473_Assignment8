@@ -5,7 +5,7 @@ var main = function () {
 
 	$("#submit").click( function () {
 		var url = $("#url").val();
-		var req = {key: url};
+		var req = {url: url};
 
 		if (url.indexOf("localhost:3000") > -1) {
 			$.getJSON("url/" + url.substr(-4), function (res) {	
@@ -19,7 +19,6 @@ var main = function () {
 			$("#result").text("Your short URL is: ").append($shortURL);	
 			});
 		}
-
 	});
 
 	$.getJSON("top/get", function (res) {
@@ -29,18 +28,16 @@ var main = function () {
 
 			$("#popular").fadeIn();
 
-		for (var i = 1; i < top.length; i = i+2) {
+		top.forEach( function (url) {
 			var $tr = $("<tr>").hide(),
-				$a = $("<a>").attr("href", "localhost:3000/" + top[i-1]).text(top[i-1]);
+				$a = $("<a>").attr("href", "localhost:3000/" + url.key).text(url.key);
 
-			$tr.append( $("<td>").text(top[i]) );
+			$tr.append( $("<td>").text(url.hits) );
 			$tr.append( $("<td>").append($a) );
 			$("#top-table").append($tr);
 			$tr.fadeIn();
+		});
 		}
-
-	}
-
 	});
 };
 
