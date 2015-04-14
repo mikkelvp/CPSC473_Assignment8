@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 var express = require('express'),
-    http = require('http'),
-	app = express(),
-	bodyParser = require('body-parser'),
-	router = express.Router(),
-	mongoClient = require('mongodb').MongoClient,
-    db,
-    seed = 49999;
+http = require('http'),
+app = express(),
+bodyParser = require('body-parser'),
+router = express.Router(),
+mongoClient = require('mongodb').MongoClient,
+db,
+seed = 49999;
 
 // connect to db
 mongoClient.connect("mongodb://localhost:27017/urlshortener", function (err, mdb) {
@@ -17,15 +17,15 @@ mongoClient.connect("mongodb://localhost:27017/urlshortener", function (err, mdb
 
         // create next key in db if it does not exist
         db.collection('next').findAndModify(
-        { next: 'next' },
-        [[ 'next', 1 ]],
-        { $setOnInsert: { value: seed } },
-        { upsert: true },
-        function (err, result) {
-            if (err !== null) {
-                console.log(err);
-            }
-        });
+            { next: 'next' },
+            [[ 'next', 1 ]],
+            { $setOnInsert: { value: seed } },
+            { upsert: true },
+            function (err, result) {
+                if (err !== null) {
+                    console.log(err);
+                }
+            });
 
         // create capped collection if it does not exist
         db.collection('top10').isCapped( function (err, capped) {
@@ -60,11 +60,11 @@ function encode(num) {
     base = alphabet.length;
 
     var str = '';
-        while (num > 0) {
-            str = alphabet.charAt(num % base) + str;
-            num = Math.floor(num / base);
-        }
-        return str;
+    while (num > 0) {
+        str = alphabet.charAt(num % base) + str;
+        num = Math.floor(num / base);
+    }
+    return str;
 }
 
 function nextKey(callback) {
@@ -76,12 +76,12 @@ function nextKey(callback) {
         { $inc: {value: incrValue} }, 
         function (err, result) {
             if (result !== null) {
-            collection.findOne( { next: 'next'}, function (err, result) {
+                collection.findOne( { next: 'next'}, function (err, result) {
                     console.log(result);
                     callback(result.value);
                 });
-        }
-    } );
+            }
+        });
 }
 
 router.route('/:key')
@@ -119,12 +119,12 @@ router.route('/shorten')
 router.route('/url/:key')
 .get( function (req, res) {
     db.collection('url').findOne( { key: req.params.key }, function (err, result) {
-    if (result !== null) {
-        res.json( { url: result.url } );
-    }
-    else {
-        res.status(404).send('404 not found');
-    }
+        if (result !== null) {
+            res.json( { url: result.url } );
+        }
+        else {
+            res.status(404).send('404 not found');
+        }
     });
 });
 

@@ -15,8 +15,8 @@ var main = function () {
 		}
 		else {
 			$.post("shorten", req, function (res) {				
-			var $shortURL = $("<a>").attr("href", res.key).text("localhost:3000/" + res.key);
-			$("#result").text("Your short URL is: ").append($shortURL);	
+				var $shortURL = $("<a>").attr("href", res.key).text("localhost:3000/" + res.key);
+				$("#result").text("Your short URL is: ").append($shortURL);	
 			});
 		}
 	});
@@ -28,15 +28,15 @@ var main = function () {
 
 			$("#popular").fadeIn();
 
-		top.forEach( function (url) {
-			var $tr = $("<tr>").hide(),
+			top.forEach( function (url) {
+				var $tr = $("<tr>").hide(),
 				$a = $("<a>").attr("href", "localhost:3000/" + url.key).text(url.key);
 
-			$tr.append( $("<td>").text(url.hits) );
-			$tr.append( $("<td>").append($a) );
-			$("#top-table").append($tr);
-			$tr.fadeIn();
-		});
+				$tr.append( $("<td>").text(url.hits) );
+				$tr.append( $("<td>").append($a) );
+				$("#top-table").append($tr);
+				$tr.fadeIn();
+			});
 		}
 	});
 };
